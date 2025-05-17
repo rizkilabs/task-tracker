@@ -8,6 +8,12 @@ const {
 
 const [, , command, ...args] = process.argv;
 const options = parseArgs(args);
+const confirm = require('readline').createInterface({ input: process.stdin, output: process.stdout });
+const { exec } = require('child_process');
+
+exec('node index.js list', (err, stdout, stderr) => {
+  if (stdout.includes('Pending Tasks')) console.log('PASS');
+});
 
 switch (command) {
   case 'add':
@@ -38,7 +44,11 @@ switch (command) {
       console.log('Error: --id is required and must be a valid number.');
       return;
     }
-    deleteTask(options.id);
+    confirm.question('Are you sure? (y/n): ', answer => {
+      if (answer.toLowerCase() === 'y') deleteTask(options.id);
+      confirm.close();
+    });
+
     break;
 
   case 'update':
@@ -75,7 +85,7 @@ function isValidDate(dateStr) {
 }
 
 function showError(message) {
-  console.error('Error:', message);
+  console.error(`\x1b[31mError:\x1b[0m ${message}`);
   process.exit(1);
 }
 

@@ -1,5 +1,11 @@
 const { loadTasks, saveTasks } = require('./storage');
 
+const RESET = '\x1b[0m';
+const GREEN = '\x1b[32m';
+const YELLOW = '\x1b[33m';
+const RED = '\x1b[31m';
+const CYAN = '\x1b[36m';
+
 function addTask(title, dueDate) {
   const tasks = loadTasks();
 
@@ -13,7 +19,7 @@ function addTask(title, dueDate) {
 
   tasks.push(newTask);
   saveTasks(tasks);
-  console.log('Task added:', newTask);
+  console.log(`${GREEN}✔ Task added successfully!${RESET}`, newTask);
 }
 
 /**
@@ -30,16 +36,16 @@ function listTasks() {
   const pending = tasks.filter(task => task.status === 'pending');
   const done = tasks.filter(task => task.status === 'done');
 
-  console.log('\n=== PENDING TASKS ===');
+  console.log(`${YELLOW}\nPending Tasks:${RESET}`);
   if (pending.length === 0) {
     console.log('  (none)');
   } else {
     pending.forEach(task => {
-      console.log(`- [${task.id}] ${task.title} (due: ${task.dueDate})`);
+      console.log(`${[task.id].padEnd(15)} ${[task.title].padEnd(30)} ${[task.dueDate].padEnd(15)} Status`);
     });
   }
 
-  console.log('\n=== DONE TASKS ===');
+  console.log(`${GREEN}\nCompleted Tasks:${RESET}`);
   if (done.length === 0) {
     console.log('  (none)');
   } else {
