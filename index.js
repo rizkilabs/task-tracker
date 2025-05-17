@@ -17,23 +17,23 @@ exec('node index.js list', (err, stdout, stderr) => {
 
 switch (command) {
   case 'add':
-    if (!options.title) showError('--title is required.');
-    if (!options.due) {
-      return console.log('Error: --due is required.');
+    if (!options.title || !options.due) {
+      console.log('\x1b[31mMissing --title or --due\x1b[0m');
+      break;
     }
-    if (!isValidDate(options.due)) {
-      return console.log('Error: Invalid --due date. Use format YYYY-MM-DD.');
-    }
-    addTask(options.title, options.due);
+    addTask(options.title, options.due, options.priority || 'medium');
     break;
+
 
   case 'list':
     listTasks({
       status: options.status,
       dueDate: options.due,
-      sortBy: options.sort // e.g., 'due', 'due-desc', 'created'
+      sortBy: options.sort,
+      priority: options.priority
     });
     break;
+
 
   case 'done':
     if (!options.id || isNaN(Number(options.id))) {

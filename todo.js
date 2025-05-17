@@ -6,7 +6,7 @@ const YELLOW = '\x1b[33m';
 const RED = '\x1b[31m';
 const CYAN = '\x1b[36m';
 
-function addTask(title, dueDate) {
+function addTask(title, dueDate, priority = 'medium') {
   const tasks = loadTasks();
   const id = tasks.length > 0 ? tasks[tasks.length - 1].id + 1 : 1;
 
@@ -16,13 +16,15 @@ function addTask(title, dueDate) {
     description: '',
     dueDate,
     status: 'pending',
-    createdAt: new Date().toISOString() // NEW
+    createdAt: new Date().toISOString(),
+    priority: priority.toLowerCase() // new field
   };
 
   tasks.push(task);
   saveTasks(tasks);
-  console.log('\x1b[32mTask added successfully!\x1b[0m');
+  console.log('\x1b[32mTask added with priority: ' + priority + '\x1b[0m');
 }
+
 
 function colorText(text, color) {
   const RESET = '\x1b[0m';
@@ -34,11 +36,12 @@ function colorText(text, color) {
  */
 function listTasks(filters = {}) {
   let tasks = loadTasks();
-  const { status, dueDate, sortBy } = filters;
+  const { status, dueDate, sortBy, priority } = filters;
 
-  // Filter
+  // Filtering
   if (status) tasks = tasks.filter(t => t.status === status.toLowerCase());
   if (dueDate) tasks = tasks.filter(t => t.dueDate === dueDate);
+  if (priority) tasks = tasks.filter(t => t.priority === priority.toLowerCase());
 
   // Sort
   if (sortBy) {
@@ -55,17 +58,14 @@ function listTasks(filters = {}) {
   console.log('='.repeat(60));
 
   tasks.forEach(task => {
-    const isDone = task.status === 'done';
-    const now = new Date();
-    const due = new Date(task.dueDate);
-    const statusColor = isDone
-      ? '\x1b[32m' // Green
-      : (due < now ? '\x1b[31m' : '\x1b[33m'); // Red if overdue, yellow otherwise
+    const priorityColor =
+      task.priority === 'high' ? '\x1b[31m' :
+        task.priority === 'medium' ? '\x1b[33m' : '\x1b[32m';
 
-    const statusIcon = isDone ? '✔' : '•';
-    const line = `${statusIcon} [${task.id}] ${task.title} (due: ${task.dueDate})`;
+    const statusIcon = task.status === 'done' ? '✔' : '•';
+    const line = `${statusIcon} [${task.id}] ${task.title} (due: ${task.dueDate}, priority: ${task.priority})`;
 
-    console.log(colorText(line, statusColor));
+    console.log(priorityColor + line + '\x1b[0m');
   });
 
   console.log('');
