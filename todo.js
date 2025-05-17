@@ -51,4 +51,28 @@ function listTasks() {
   console.log('');
 }
 
-module.exports = { addTask, listTasks };
+/**
+ * Mark a task as done by its ID
+ * @param {number|string} id - The task ID to mark as done
+ */
+function markTaskAsDone(id) {
+  const tasks = loadTasks();
+  const taskIndex = tasks.findIndex(task => String(task.id) === String(id));
+
+  if (taskIndex === -1) {
+    console.log(`Task with ID ${id} not found.`);
+    return;
+  }
+
+  if (tasks[taskIndex].status === 'done') {
+    console.log(`Task with ID ${id} is already marked as done.`);
+    return;
+  }
+
+  tasks[taskIndex].status = 'done';
+  saveTasks(tasks);
+
+  console.log(`Task "${tasks[taskIndex].title}" marked as done.`);
+}
+
+module.exports = { addTask, listTasks, markTaskAsDone };

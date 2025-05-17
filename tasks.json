@@ -4,13 +4,13 @@
     "title": "Buy milk",
     "description": "Buy from the store before 6PM",
     "dueDate": null,
-    "status": "pending"
+    "status": "done"
   },
   {
     "id": 1747478076410,
     "title": "Buy milk",
     "description": "",
     "dueDate": "2025-05-20",
-    "status": "pending"
+    "status": "done"
   }
 ]
