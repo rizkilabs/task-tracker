@@ -11,8 +11,12 @@ const options = parseArgs(args);
 
 switch (command) {
   case 'add':
-    if (!options.title || !options.due) {
-      return console.log('Usage: add --title "Task title" --due "YYYY-MM-DD"');
+    if (!options.title) showError('--title is required.');
+    if (!options.due) {
+      return console.log('Error: --due is required.');
+    }
+    if (!isValidDate(options.due)) {
+      return console.log('Error: Invalid --due date. Use format YYYY-MM-DD.');
     }
     addTask(options.title, options.due);
     break;
@@ -22,22 +26,25 @@ switch (command) {
     break;
 
   case 'done':
-    if (!options.id) {
-      return console.log('Usage: done --id <taskId>');
+    if (!options.id || isNaN(Number(options.id))) {
+      console.log('Error: --id is required and must be a valid number.');
+      return;
     }
     markTaskAsDone(options.id);
     break;
 
   case 'delete':
-    if (!options.id) {
-      return console.log('Usage: delete --id <taskId>');
+    if (!options.id || isNaN(Number(options.id))) {
+      console.log('Error: --id is required and must be a valid number.');
+      return;
     }
     deleteTask(options.id);
     break;
 
   case 'update':
-    if (!options.id || (!options.title && !options.due)) {
-      return console.log('Usage: update --id <taskId> [--title "New title"] [--due "YYYY-MM-DD"]');
+    if (!options.id || isNaN(Number(options.id))) {
+      console.log('Error: --id is required and must be a valid number.');
+      return;
     }
     updateTask(options.id, { title: options.title, dueDate: options.due });
     break;
@@ -58,6 +65,18 @@ function parseArgs(args) {
     }
   }
   return result;
+}
+
+function isValidDate(dateStr) {
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(dateStr)) return false;
+  const date = new Date(dateStr);
+  return !isNaN(date.getTime());
+}
+
+function showError(message) {
+  console.error('Error:', message);
+  process.exit(1);
 }
 
 // Help message
