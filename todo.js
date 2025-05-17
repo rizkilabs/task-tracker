@@ -25,34 +25,33 @@ function addTask(title, dueDate) {
 /**
  * Display all tasks grouped by status: pending and done
  */
-function listTasks() {
+function listTasks(filters = {}) {
   const tasks = loadTasks();
+  const { status, dueDate } = filters;
 
-  if (tasks.length === 0) {
-    console.log('No tasks found.');
+  // Apply filters if provided
+  let filteredTasks = tasks;
+
+  if (status) {
+    filteredTasks = filteredTasks.filter(task => task.status === status.toLowerCase());
+  }
+
+  if (dueDate) {
+    filteredTasks = filteredTasks.filter(task => task.dueDate === dueDate);
+  }
+
+  if (filteredTasks.length === 0) {
+    console.log('\x1b[33mNo tasks match your filter.\x1b[0m');
     return;
   }
 
-  const pending = tasks.filter(task => task.status === 'pending');
-  const done = tasks.filter(task => task.status === 'done');
+  console.log(`\n\x1b[36mFiltered Task List (${filteredTasks.length}):\x1b[0m`);
+  console.log('='.repeat(60));
 
-  console.log(`${YELLOW}\nPending Tasks:${RESET}`);
-  if (pending.length === 0) {
-    console.log('  (none)');
-  } else {
-    pending.forEach(task => {
-      console.log(`${[task.id].padEnd(15)} ${[task.title].padEnd(30)} ${[task.dueDate].padEnd(15)} Status`);
-    });
-  }
-
-  console.log(`${GREEN}\nCompleted Tasks:${RESET}`);
-  if (done.length === 0) {
-    console.log('  (none)');
-  } else {
-    done.forEach(task => {
-      console.log(`- [${task.id}] ${task.title} (done)`);
-    });
-  }
+  filteredTasks.forEach(task => {
+    const statusIcon = task.status === 'done' ? '✔' : '•';
+    console.log(`${statusIcon} [${task.id}] ${task.title} (due: ${task.dueDate})`);
+  });
 
   console.log('');
 }

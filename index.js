@@ -28,7 +28,10 @@ switch (command) {
     break;
 
   case 'list':
-    listTasks();
+    listTasks({
+      status: options.status,      // optional
+      dueDate: options.due         // optional
+    });
     break;
 
   case 'done':
