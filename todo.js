@@ -27,6 +27,18 @@ function addTask(title, description) {
 // // Example usage
 // const newTask = createTask("Read a book", "Read 'Clean Code'", "2025-05-20");
 // console.log(newTask);
+// =======================
+// const tasks = loadTasks();
+
+// tasks.push({
+//   id: Date.now(),
+//   title: "Buy groceries",
+//   description: "Milk, Eggs, Bread",
+//   dueDate: "2025-05-20",
+//   status: "pending"
+// });
+
+// saveTasks(tasks);
 
 
 function listTasks() {
