@@ -1,10 +1,14 @@
 const { loadTasks, saveTasks } = require('./storage');
+const path = require('path');
+const fs = require('fs');
 
 const RESET = '\x1b[0m';
 const GREEN = '\x1b[32m';
 const YELLOW = '\x1b[33m';
 const RED = '\x1b[31m';
 const CYAN = '\x1b[36m';
+
+const ARCHIVE_FILE = path.join(__dirname, 'archive.json');
 
 function addTask(title, dueDate, priority = 'medium') {
   const tasks = loadTasks();
@@ -141,10 +145,50 @@ function updateTask(id, updates = {}) {
   console.log(`Task "${task.title}" updated.`);
 }
 
+function archiveTasks() {
+  const tasks = loadTasks();
+  const doneTasks = tasks.filter(t => t.status === 'done');
+  const remainingTasks = tasks.filter(t => t.status !== 'done');
+
+  if (doneTasks.length === 0) {
+    console.log('\x1b[33mNo completed tasks to archive.\x1b[0m');
+    return;
+  }
+
+  let archive = [];
+  if (fs.existsSync(ARCHIVE_FILE)) {
+    const archiveData = fs.readFileSync(ARCHIVE_FILE, 'utf8');
+    archive = archiveData ? JSON.parse(archiveData) : [];
+  }
+
+  archive.push(...doneTasks);
+
+  fs.writeFileSync(ARCHIVE_FILE, JSON.stringify(archive, null, 2));
+  saveTasks(remainingTasks);
+
+  console.log(`\x1b[32mArchived ${doneTasks.length} completed task(s).\x1b[0m`);
+}
+
+function cleanupTasks() {
+  const tasks = loadTasks();
+  const remaining = tasks.filter(t => t.status !== 'done');
+  const removedCount = tasks.length - remaining.length;
+
+  if (removedCount === 0) {
+    console.log('\x1b[33mNo completed tasks to remove.\x1b[0m');
+    return;
+  }
+
+  saveTasks(remaining);
+  console.log(`\x1b[32mDeleted ${removedCount} completed task(s).\x1b[0m`);
+}
+
 module.exports = {
   addTask,
   listTasks,
   markTaskAsDone,
   deleteTask,
-  updateTask
+  updateTask,
+  archiveTasks,
+  cleanupTasks
 };

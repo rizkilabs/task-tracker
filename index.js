@@ -3,7 +3,9 @@ const {
   listTasks,
   markTaskAsDone,
   deleteTask,
-  updateTask
+  updateTask,
+  archiveTasks,
+  cleanupTasks
 } = require('./todo');
 
 const [, , command, ...args] = process.argv;
@@ -61,6 +63,11 @@ switch (command) {
       return;
     }
     updateTask(options.id, { title: options.title, dueDate: options.due });
+    break;
+
+  case 'archive':
+  case 'cleanup':
+    archiveTasks();
     break;
 
   default:
