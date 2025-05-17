@@ -75,4 +75,28 @@ function markTaskAsDone(id) {
   console.log(`Task "${tasks[taskIndex].title}" marked as done.`);
 }
 
-module.exports = { addTask, listTasks, markTaskAsDone };
+/**
+ * Delete a task by its ID
+ * @param {number|string} id - The ID of the task to delete
+ */
+function deleteTask(id) {
+  const tasks = loadTasks();
+  const taskIndex = tasks.findIndex(task => String(task.id) === String(id));
+
+  if (taskIndex === -1) {
+    console.log(`Task with ID ${id} not found.`);
+    return;
+  }
+
+  const removed = tasks.splice(taskIndex, 1)[0];
+  saveTasks(tasks);
+
+  console.log(`Task "${removed.title}" deleted.`);
+}
+
+module.exports = {
+  addTask,
+  listTasks,
+  markTaskAsDone,
+  deleteTask
+};
