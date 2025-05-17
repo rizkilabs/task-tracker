@@ -1,4 +1,4 @@
-const { addTask } = require('./todo');
+const { addTask, listTasks } = require('./todo');
 
 const [, , command, ...args] = process.argv;
 
@@ -8,13 +8,17 @@ if (command === 'add') {
     console.log('Missing required --title and/or --due');
     process.exit(1);
   }
-
   addTask(parsedArgs.title, parsedArgs.due);
+
+} else if (command === 'list') {
+  listTasks();
+
 } else {
-  console.log('Usage: node index.js add --title "Task" --due "YYYY-MM-DD"');
+  console.log('Usage:');
+  console.log('  node index.js add --title "Task" --due "YYYY-MM-DD"');
+  console.log('  node index.js list');
 }
 
-// Simple argument parser for flags like --title and --due
 function parseArgs(args) {
   const result = {};
   for (let i = 0; i < args.length; i++) {
