@@ -24,6 +24,10 @@ function addTask(title, dueDate) {
   console.log('\x1b[32mTask added successfully!\x1b[0m');
 }
 
+function colorText(text, color) {
+  const RESET = '\x1b[0m';
+  return `${color}${text}${RESET}`;
+}
 
 /**
  * Display all tasks grouped by status: pending and done
@@ -47,18 +51,23 @@ function listTasks(filters = {}) {
     }
   }
 
-  if (tasks.length === 0) {
-    console.log('\x1b[33mNo tasks found.\x1b[0m');
-    return;
-  }
-
-  console.log(`\n\x1b[36mTask List (${tasks.length})\x1b[0m`);
+  console.log('\n\x1b[1m\x1b[36mTask List\x1b[0m');
   console.log('='.repeat(60));
 
   tasks.forEach(task => {
-    const statusIcon = task.status === 'done' ? '✔' : '•';
-    console.log(`${statusIcon} [${task.id}] ${task.title} (due: ${task.dueDate})`);
+    const isDone = task.status === 'done';
+    const now = new Date();
+    const due = new Date(task.dueDate);
+    const statusColor = isDone
+      ? '\x1b[32m' // Green
+      : (due < now ? '\x1b[31m' : '\x1b[33m'); // Red if overdue, yellow otherwise
+
+    const statusIcon = isDone ? '✔' : '•';
+    const line = `${statusIcon} [${task.id}] ${task.title} (due: ${task.dueDate})`;
+
+    console.log(colorText(line, statusColor));
   });
+
   console.log('');
 }
 
