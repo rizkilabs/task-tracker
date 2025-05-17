@@ -1,0 +1,8 @@
+{
+  "name": "todo-cli",
+  "version": "1.0.0",
+  "description": "A simple CLI to-do list manager",
+  "scripts": {
+    "start": "node index.js"
+  }
+}
