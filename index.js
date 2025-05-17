@@ -29,8 +29,9 @@ switch (command) {
 
   case 'list':
     listTasks({
-      status: options.status,      // optional
-      dueDate: options.due         // optional
+      status: options.status,
+      dueDate: options.due,
+      sortBy: options.sort // e.g., 'due', 'due-desc', 'created'
     });
     break;
 

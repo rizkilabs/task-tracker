@@ -8,51 +8,57 @@ const CYAN = '\x1b[36m';
 
 function addTask(title, dueDate) {
   const tasks = loadTasks();
+  const id = tasks.length > 0 ? tasks[tasks.length - 1].id + 1 : 1;
 
-  const newTask = {
-    id: Date.now(),
+  const task = {
+    id,
     title,
     description: '',
     dueDate,
-    status: 'pending'
+    status: 'pending',
+    createdAt: new Date().toISOString() // NEW
   };
 
-  tasks.push(newTask);
+  tasks.push(task);
   saveTasks(tasks);
-  console.log(`${GREEN}✔ Task added successfully!${RESET}`, newTask);
+  console.log('\x1b[32mTask added successfully!\x1b[0m');
 }
+
 
 /**
  * Display all tasks grouped by status: pending and done
  */
 function listTasks(filters = {}) {
-  const tasks = loadTasks();
-  const { status, dueDate } = filters;
+  let tasks = loadTasks();
+  const { status, dueDate, sortBy } = filters;
 
-  // Apply filters if provided
-  let filteredTasks = tasks;
+  // Filter
+  if (status) tasks = tasks.filter(t => t.status === status.toLowerCase());
+  if (dueDate) tasks = tasks.filter(t => t.dueDate === dueDate);
 
-  if (status) {
-    filteredTasks = filteredTasks.filter(task => task.status === status.toLowerCase());
+  // Sort
+  if (sortBy) {
+    if (sortBy === 'due') {
+      tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+    } else if (sortBy === 'due-desc') {
+      tasks.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
+    } else if (sortBy === 'created') {
+      tasks.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    }
   }
 
-  if (dueDate) {
-    filteredTasks = filteredTasks.filter(task => task.dueDate === dueDate);
-  }
-
-  if (filteredTasks.length === 0) {
-    console.log('\x1b[33mNo tasks match your filter.\x1b[0m');
+  if (tasks.length === 0) {
+    console.log('\x1b[33mNo tasks found.\x1b[0m');
     return;
   }
 
-  console.log(`\n\x1b[36mFiltered Task List (${filteredTasks.length}):\x1b[0m`);
+  console.log(`\n\x1b[36mTask List (${tasks.length})\x1b[0m`);
   console.log('='.repeat(60));
 
-  filteredTasks.forEach(task => {
+  tasks.forEach(task => {
     const statusIcon = task.status === 'done' ? '✔' : '•';
     console.log(`${statusIcon} [${task.id}] ${task.title} (due: ${task.dueDate})`);
   });
-
   console.log('');
 }
 
