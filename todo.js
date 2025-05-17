@@ -94,9 +94,37 @@ function deleteTask(id) {
   console.log(`Task "${removed.title}" deleted.`);
 }
 
+/**
+ * Update a task by ID. Accepts optional new title and/or dueDate.
+ * @param {string|number} id - ID of the task to update
+ * @param {object} updates - Object with optional `title` and/or `dueDate`
+ */
+function updateTask(id, updates = {}) {
+  const tasks = loadTasks();
+  const index = tasks.findIndex(task => String(task.id) === String(id));
+
+  if (index === -1) {
+    console.log(`Task with ID ${id} not found.`);
+    return;
+  }
+
+  const task = tasks[index];
+
+  if (updates.title) {
+    task.title = updates.title;
+  }
+  if (updates.dueDate) {
+    task.dueDate = updates.dueDate;
+  }
+
+  saveTasks(tasks);
+  console.log(`Task "${task.title}" updated.`);
+}
+
 module.exports = {
   addTask,
   listTasks,
   markTaskAsDone,
-  deleteTask
+  deleteTask,
+  updateTask
 };

@@ -1,4 +1,10 @@
-const { addTask, listTasks, markTaskAsDone, deleteTask } = require('./todo');
+const {
+  addTask,
+  listTasks,
+  markTaskAsDone,
+  deleteTask,
+  updateTask
+} = require('./todo');
 
 const [, , command, ...args] = process.argv;
 
@@ -29,12 +35,28 @@ if (command === 'add') {
   }
   deleteTask(parsedArgs.id);
 
+} else if (command === 'update') {
+  const parsedArgs = parseArgs(args);
+  if (!parsedArgs.id) {
+    console.log('Please provide --id to update a task');
+    process.exit(1);
+  }
+  if (!parsedArgs.title && !parsedArgs.due) {
+    console.log('Please provide at least one of --title or --due to update');
+    process.exit(1);
+  }
+  updateTask(parsedArgs.id, {
+    title: parsedArgs.title,
+    dueDate: parsedArgs.due
+  });
+
 } else {
   console.log('Usage:');
   console.log('  node index.js add --title "Task" --due "YYYY-MM-DD"');
   console.log('  node index.js list');
   console.log('  node index.js done --id <taskId>');
   console.log('  node index.js delete --id <taskId>');
+  console.log('  node index.js update --id <taskId> [--title "New Title"] [--due "YYYY-MM-DD"]');
 }
 
 function parseArgs(args) {
