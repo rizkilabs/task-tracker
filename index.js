@@ -7,58 +7,47 @@ const {
 } = require('./todo');
 
 const [, , command, ...args] = process.argv;
+const options = parseArgs(args);
 
-if (command === 'add') {
-  const parsedArgs = parseArgs(args);
-  if (!parsedArgs.title || !parsedArgs.due) {
-    console.log('Missing required --title and/or --due');
-    process.exit(1);
-  }
-  addTask(parsedArgs.title, parsedArgs.due);
+switch (command) {
+  case 'add':
+    if (!options.title || !options.due) {
+      return console.log('Usage: add --title "Task title" --due "YYYY-MM-DD"');
+    }
+    addTask(options.title, options.due);
+    break;
 
-} else if (command === 'list') {
-  listTasks();
+  case 'list':
+    listTasks();
+    break;
 
-} else if (command === 'done') {
-  const parsedArgs = parseArgs(args);
-  if (!parsedArgs.id) {
-    console.log('Please provide --id to mark as done');
-    process.exit(1);
-  }
-  markTaskAsDone(parsedArgs.id);
+  case 'done':
+    if (!options.id) {
+      return console.log('Usage: done --id <taskId>');
+    }
+    markTaskAsDone(options.id);
+    break;
 
-} else if (command === 'delete') {
-  const parsedArgs = parseArgs(args);
-  if (!parsedArgs.id) {
-    console.log('Please provide --id to delete a task');
-    process.exit(1);
-  }
-  deleteTask(parsedArgs.id);
+  case 'delete':
+    if (!options.id) {
+      return console.log('Usage: delete --id <taskId>');
+    }
+    deleteTask(options.id);
+    break;
 
-} else if (command === 'update') {
-  const parsedArgs = parseArgs(args);
-  if (!parsedArgs.id) {
-    console.log('Please provide --id to update a task');
-    process.exit(1);
-  }
-  if (!parsedArgs.title && !parsedArgs.due) {
-    console.log('Please provide at least one of --title or --due to update');
-    process.exit(1);
-  }
-  updateTask(parsedArgs.id, {
-    title: parsedArgs.title,
-    dueDate: parsedArgs.due
-  });
+  case 'update':
+    if (!options.id || (!options.title && !options.due)) {
+      return console.log('Usage: update --id <taskId> [--title "New title"] [--due "YYYY-MM-DD"]');
+    }
+    updateTask(options.id, { title: options.title, dueDate: options.due });
+    break;
 
-} else {
-  console.log('Usage:');
-  console.log('  node index.js add --title "Task" --due "YYYY-MM-DD"');
-  console.log('  node index.js list');
-  console.log('  node index.js done --id <taskId>');
-  console.log('  node index.js delete --id <taskId>');
-  console.log('  node index.js update --id <taskId> [--title "New Title"] [--due "YYYY-MM-DD"]');
+  default:
+    printHelp();
+    break;
 }
 
+// Helper to parse CLI args into an object
 function parseArgs(args) {
   const result = {};
   for (let i = 0; i < args.length; i++) {
@@ -69,4 +58,14 @@ function parseArgs(args) {
     }
   }
   return result;
+}
+
+// Help message
+function printHelp() {
+  console.log('\nUsage:');
+  console.log('  node index.js add --title "Task" --due "YYYY-MM-DD"');
+  console.log('  node index.js list');
+  console.log('  node index.js done --id <taskId>');
+  console.log('  node index.js delete --id <taskId>');
+  console.log('  node index.js update --id <taskId> [--title "New title"] [--due "YYYY-MM-DD"]\n');
 }

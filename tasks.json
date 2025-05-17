@@ -5,5 +5,12 @@
     "description": "Buy from the store before 6PM",
     "dueDate": "2025-05-22",
     "status": "done"
+  },
+  {
+    "id": 1747488706748,
+    "title": "Read a book",
+    "description": "",
+    "dueDate": "2025-05-20",
+    "status": "pending"
   }
 ]
