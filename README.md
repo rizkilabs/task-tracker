@@ -1,4 +1,4 @@
-# 📝 CLI Task Tracker App
+# 📝 Task Tracker
 
 A simple command-line to-do list manager built with Node.js using only built-in modules — no external libraries.
 
