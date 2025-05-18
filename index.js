@@ -16,10 +16,24 @@ const [, , command, ...args] = process.argv;
 const options = parseArgs(args);
 const confirm = require('readline').createInterface({ input: process.stdin, output: process.stdout });
 const { exec } = require('child_process');
+const fs = require('fs');
+const path = require('path');
 
 exec('node index.js list', (err, stdout, stderr) => {
   if (stdout.includes('Pending Tasks')) console.log('PASS');
 });
+
+if (process.argv.includes('--version')) {
+  const pkg = require('./package.json');
+  console.log(`To-Do CLI - version ${pkg.version}`);
+  process.exit(0); // Exit after printing version
+}
+
+// if (command === 'version') {
+//   const pkg = require('./package.json');
+//   console.log(`To-Do CLI - version ${pkg.version}`);
+//   return;
+// }
 
 switch (command) {
   case 'add':
