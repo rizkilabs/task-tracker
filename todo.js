@@ -270,6 +270,65 @@ function importTasks(filePath) {
   console.log(`\x1b[32mImported ${newTasks.length} tasks from ${filePath}\x1b[0m`);
 }
 
+function showHelp() {
+  console.log(`
+\x1b[1mTo-Do CLI - Usage Guide\x1b[0m
+
+\x1b[36mCommands:\x1b[0m
+
+  \x1b[33madd\x1b[0m         Add a new task
+    --title "Task Title"         (required)
+    --desc "Task description"    (optional)
+    --due "YYYY-MM-DD"           (optional)
+    --priority low|medium|high   (optional)
+
+  \x1b[33mlist\x1b[0m        Show all tasks
+    --status pending|done        (optional)
+    --due "YYYY-MM-DD"           (optional)
+    --priority low|medium|high   (optional)
+    --sort due|created           (optional)
+
+  \x1b[33mdone\x1b[0m        Mark task as done
+    --id <task_id>
+
+  \x1b[33mupdate\x1b[0m      Update task info
+    --id <task_id>
+    --title "New title"          (optional)
+    --due "YYYY-MM-DD"           (optional)
+    --priority low|medium|high   (optional)
+
+  \x1b[33mdelete\x1b[0m      Delete a task by ID
+    --id <task_id>
+
+  \x1b[33mremind\x1b[0m      Show tasks due within 24 hours
+
+  \x1b[33mexport\x1b[0m      Export tasks
+    --format txt|csv             (optional, default: txt)
+
+  \x1b[33mimport\x1b[0m      Import tasks from file
+    --file <path/to/file.csv>
+
+  \x1b[33marchive\x1b[0m     Move completed tasks to archive.json
+
+  \x1b[33mcleanup\x1b[0m     Alias for archive
+
+  \x1b[33mhelp\x1b[0m        Show this help message
+
+\x1b[36mExamples:\x1b[0m
+
+  node index.js add --title "Buy milk" --due "2025-05-20"
+  node index.js list --status pending --sort due
+  node index.js done --id 2
+  node index.js update --id 3 --title "Submit project" --priority high
+  node index.js delete --id 5
+  node index.js export --format csv
+  node index.js import --file ./exports/tasks.csv
+  node index.js remind
+  node index.js help
+`);
+}
+
+
 module.exports = {
   addTask,
   listTasks,
@@ -280,5 +339,6 @@ module.exports = {
   cleanupTasks,
   remindTasks,
   exportTasks,
-  importTasks
+  importTasks,
+  showHelp
 };

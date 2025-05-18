@@ -8,7 +8,8 @@ const {
   cleanupTasks,
   remindTasks,
   exportTasks,
-  importTasks
+  importTasks,
+  showHelp
 } = require('./todo');
 
 const [, , command, ...args] = process.argv;
@@ -89,6 +90,9 @@ switch (command) {
     }
     break;
 
+  case 'help':
+    showHelp();
+    break;
 
 
   default:
