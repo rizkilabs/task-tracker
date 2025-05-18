@@ -12,6 +12,10 @@ A simple command-line to-do list manager built with Node.js using only built-in 
 - Terminal color output for better UX
 - Local due-date reminder (within 24h)
 
+## 📷 Screenshot
+
+![Task Tracker Screenshot](screenshot.png)
+
 ## 📦 Requirements
 
 - Node.js (v12+)
