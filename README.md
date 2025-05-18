@@ -2,6 +2,8 @@
 
 A simple command-line to-do list manager built with Node.js using only built-in modules — no external libraries.
 
+Install with NPM: [https://www.npmjs.com/package/rizki-task-tracker-cli](https://www.npmjs.com/package/rizki-task-tracker-cli)
+
 ## 🚀 Features
 
 - Add, update, delete, complete, and list tasks
