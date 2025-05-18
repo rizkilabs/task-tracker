@@ -14,7 +14,7 @@ A simple command-line to-do list manager built with Node.js using only built-in 
 
 ## 📷 Screenshot
 
-![Task Tracker Screenshot](screenshot.png)
+![Task Tracker Screenshot](https://i.imgur.com/F3fpN8K.png)
 
 ## 📦 Requirements
 

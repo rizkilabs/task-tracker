@@ -1,9 +1,17 @@
 {
-  "name": "todo-cli",
+  "name": "rizki-task-tracker-cli",
   "version": "1.0.0",
-  "description": "A simple CLI to-do list manager",
-  "main": "index.js",
-  "scripts": {
-    "start": "node index.js"
-  }
+  "description": "A simple CLI to-do list manager built with Node.js and no external libraries.",
+  "bin": {
+    "todo": "./index.js"
+  },
+  "keywords": [
+    "todo",
+    "cli",
+    "task",
+    "nodejs",
+    "terminal"
+  ],
+  "author": "Your Name <you@example.com>",
+  "license": "MIT"
 }
