@@ -5,7 +5,8 @@ const {
   deleteTask,
   updateTask,
   archiveTasks,
-  cleanupTasks
+  cleanupTasks,
+  remindTasks
 } = require('./todo');
 
 const [, , command, ...args] = process.argv;
@@ -70,6 +71,11 @@ switch (command) {
     archiveTasks();
     break;
 
+  case 'remind':
+    remindTasks();
+    break;
+
+
   default:
     printHelp();
     break;
@@ -109,3 +115,5 @@ function printHelp() {
   console.log('  node index.js delete --id <taskId>');
   console.log('  node index.js update --id <taskId> [--title "New title"] [--due "YYYY-MM-DD"]\n');
 }
+
+

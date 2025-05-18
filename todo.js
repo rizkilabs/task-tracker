@@ -183,6 +183,28 @@ function cleanupTasks() {
   console.log(`\x1b[32mDeleted ${removedCount} completed task(s).\x1b[0m`);
 }
 
+function remindTasks() {
+  const tasks = loadTasks();
+  const now = new Date();
+  const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  const upcomingTasks = tasks.filter(task => {
+    if (task.status !== 'pending') return false;
+    const due = new Date(task.dueDate);
+    return due >= now && due <= oneDayLater;
+  });
+
+  if (upcomingTasks.length === 0) {
+    console.log('\x1b[36mNo tasks due within 24 hours.\x1b[0m');
+    return;
+  }
+
+  console.log('\x1b[1m\x1b[33m⏰ Upcoming Tasks (due within 24 hours):\x1b[0m');
+  upcomingTasks.forEach(task => {
+    console.log(`\x1b[33m[${task.id}] ${task.title} → Due: ${task.dueDate}\x1b[0m`);
+  });
+}
+
 module.exports = {
   addTask,
   listTasks,
@@ -190,5 +212,6 @@ module.exports = {
   deleteTask,
   updateTask,
   archiveTasks,
-  cleanupTasks
+  cleanupTasks,
+  remindTasks
 };
