@@ -205,6 +205,71 @@ function remindTasks() {
   });
 }
 
+const EXPORTS_DIR = path.join(__dirname, 'exports');
+if (!fs.existsSync(EXPORTS_DIR)) fs.mkdirSync(EXPORTS_DIR);
+
+function exportTasks(format = 'txt') {
+  const tasks = loadTasks();
+  const filename = `tasks_export_${Date.now()}.${format}`;
+  const filePath = path.join(EXPORTS_DIR, filename);
+
+  let content = '';
+
+  if (format === 'csv') {
+    content = 'id,title,description,dueDate,status,priority,createdAt\n';
+    content += tasks.map(t =>
+      `${t.id},"${t.title.replace(/"/g, '""')}","${t.description.replace(/"/g, '""')}",${t.dueDate},${t.status},${t.priority},${t.createdAt}`
+    ).join('\n');
+  } else {
+    content = tasks.map(t =>
+      `ID: ${t.id}\nTitle: ${t.title}\nDescription: ${t.description}\nDue: ${t.dueDate}\nStatus: ${t.status}\nPriority: ${t.priority}\nCreated At: ${t.createdAt}\n---`
+    ).join('\n\n');
+  }
+
+  fs.writeFileSync(filePath, content);
+  console.log(`\x1b[32mTasks exported to ${filePath}\x1b[0m`);
+}
+
+function importTasks(filePath) {
+  if (!fs.existsSync(filePath)) {
+    console.log('\x1b[31mFile not found:\x1b[0m', filePath);
+    return;
+  }
+
+  const ext = path.extname(filePath).toLowerCase();
+  const fileContent = fs.readFileSync(filePath, 'utf8');
+  const existingTasks = loadTasks();
+  let newTasks = [];
+
+  if (ext === '.csv') {
+    const lines = fileContent.trim().split('\n').slice(1); // skip header
+    newTasks = lines.map(line => {
+      const [id, title, description, dueDate, status, priority, createdAt] = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(val => val.replace(/^"|"$/g, ''));
+      return {
+        id: Number(id),
+        title,
+        description,
+        dueDate,
+        status,
+        priority,
+        createdAt
+      };
+    });
+  } else {
+    console.log('\x1b[33mImport from .txt not supported yet. Use .csv format.\x1b[0m');
+    return;
+  }
+
+  // Prevent duplicate IDs
+  const maxId = existingTasks.reduce((max, t) => Math.max(max, t.id), 0);
+  newTasks.forEach((t, index) => {
+    t.id = maxId + index + 1;
+  });
+
+  saveTasks([...existingTasks, ...newTasks]);
+  console.log(`\x1b[32mImported ${newTasks.length} tasks from ${filePath}\x1b[0m`);
+}
+
 module.exports = {
   addTask,
   listTasks,
@@ -213,5 +278,7 @@ module.exports = {
   updateTask,
   archiveTasks,
   cleanupTasks,
-  remindTasks
+  remindTasks,
+  exportTasks,
+  importTasks
 };

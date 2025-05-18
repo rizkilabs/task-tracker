@@ -6,7 +6,9 @@ const {
   updateTask,
   archiveTasks,
   cleanupTasks,
-  remindTasks
+  remindTasks,
+  exportTasks,
+  importTasks
 } = require('./todo');
 
 const [, , command, ...args] = process.argv;
@@ -74,6 +76,19 @@ switch (command) {
   case 'remind':
     remindTasks();
     break;
+
+  case 'export':
+    exportTasks(options.format || 'txt');
+    break;
+
+  case 'import':
+    if (!options.file) {
+      console.log('\x1b[31mPlease provide a file path with --file\x1b[0m');
+    } else {
+      importTasks(options.file);
+    }
+    break;
+
 
 
   default:
