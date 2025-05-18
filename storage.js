@@ -1,35 +1,54 @@
 const fs = require('fs');
-const path = './tasks.json';
+const path = require('path');
 
-/**
- * Load tasks from tasks.json file
- * @returns {Array} Array of task objects
- */
-function loadTasks() {
+const TASKS_FILE = path.join(__dirname, 'tasks.json');
+const ARCHIVE_FILE = path.join(__dirname, 'archive.json');
+
+// === Read tasks from file ===
+function readTasks() {
     try {
-        if (!fs.existsSync(path)) {
-            // If file doesn't exist, create it with an empty array
-            fs.writeFileSync(path, '[]');
-        }
-
-        const data = fs.readFileSync(path, 'utf8');
-        return JSON.parse(data);
+        if (!fs.existsSync(TASKS_FILE)) return [];
+        const data = fs.readFileSync(TASKS_FILE, 'utf8');
+        return JSON.parse(data || '[]');
     } catch (err) {
-        console.error('Error reading tasks.json:', err.message);
+        console.error('Error reading tasks file:', err.message);
         return [];
     }
 }
 
-/**
- * Save tasks array to tasks.json file
- * @param {Array} tasks - Array of task objects
- */
-function saveTasks(tasks) {
+// === Write tasks to file ===
+function writeTasks(tasks) {
     try {
-        fs.writeFileSync(path, JSON.stringify(tasks, null, 2));
+        fs.writeFileSync(TASKS_FILE, JSON.stringify(tasks, null, 2));
     } catch (err) {
-        console.error('Error writing to tasks.json:', err.message);
+        console.error('Error writing tasks file:', err.message);
     }
 }
 
-module.exports = { loadTasks, saveTasks };
+// === Read archived tasks ===
+function readArchivedTasks() {
+    try {
+        if (!fs.existsSync(ARCHIVE_FILE)) return [];
+        const data = fs.readFileSync(ARCHIVE_FILE, 'utf8');
+        return JSON.parse(data || '[]');
+    } catch (err) {
+        console.error('Error reading archive file:', err.message);
+        return [];
+    }
+}
+
+// === Write archived tasks ===
+function writeArchivedTasks(tasks) {
+    try {
+        fs.writeFileSync(ARCHIVE_FILE, JSON.stringify(tasks, null, 2));
+    } catch (err) {
+        console.error('Error writing archive file:', err.message);
+    }
+}
+
+module.exports = {
+    readTasks,
+    writeTasks,
+    readArchivedTasks,
+    writeArchivedTasks
+};

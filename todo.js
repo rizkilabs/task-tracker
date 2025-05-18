@@ -1,344 +1,239 @@
-const { loadTasks, saveTasks } = require('./storage');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
-const RESET = '\x1b[0m';
-const GREEN = '\x1b[32m';
-const YELLOW = '\x1b[33m';
-const RED = '\x1b[31m';
-const CYAN = '\x1b[36m';
+// === File Paths ===
+const TASK_FILE = 'tasks.json';
+const ARCHIVE_FILE = 'archive.json';
 
-const ARCHIVE_FILE = path.join(__dirname, 'archive.json');
+// === ANSI Colors ===
+const colors = {
+  reset: "\x1b[0m",
+  red: "\x1b[31m",
+  green: "\x1b[32m",
+  yellow: "\x1b[33m",
+  cyan: "\x1b[36m",
+  bold: "\x1b[1m",
+};
 
-function addTask(title, dueDate, priority = 'medium') {
+// === Utility ===
+function loadTasks(file = TASK_FILE) {
+  try {
+    const data = fs.readFileSync(file, 'utf8');
+    return JSON.parse(data || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveTasks(tasks, file = TASK_FILE) {
+  try {
+    fs.writeFileSync(file, JSON.stringify(tasks, null, 2));
+  } catch (err) {
+    console.error(`${colors.red}Error writing to ${file}:${colors.reset}`, err.message);
+  }
+}
+
+function isValidDate(dateStr) {
+  return !isNaN(new Date(dateStr).getTime());
+}
+
+function getNextId(tasks) {
+  return tasks.length ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
+}
+
+// === Task Operations ===
+function addTask(options) {
+  const { title, desc = '', due, priority = 'medium' } = options;
+  if (!title) return console.log(`${colors.red}--title is required.${colors.reset}`);
+  if (due && !isValidDate(due)) return console.log(`${colors.red}Invalid date format. Use YYYY-MM-DD.${colors.reset}`);
   const tasks = loadTasks();
-  const id = tasks.length > 0 ? tasks[tasks.length - 1].id + 1 : 1;
-
-  const task = {
-    id,
+  const newTask = {
+    id: getNextId(tasks),
     title,
-    description: '',
-    dueDate,
+    description: desc,
+    dueDate: due || null,
+    priority,
     status: 'pending',
-    createdAt: new Date().toISOString(),
-    priority: priority.toLowerCase() // new field
+    createdAt: new Date().toISOString()
   };
-
-  tasks.push(task);
+  tasks.push(newTask);
   saveTasks(tasks);
-  console.log('\x1b[32mTask added with priority: ' + priority + '\x1b[0m');
+  console.log(`${colors.green}Task added:${colors.reset} "${title}"`);
 }
 
-
-function colorText(text, color) {
-  const RESET = '\x1b[0m';
-  return `${color}${text}${RESET}`;
-}
-
-/**
- * Display all tasks grouped by status: pending and done
- */
 function listTasks(filters = {}) {
   let tasks = loadTasks();
-  const { status, dueDate, sortBy, priority } = filters;
 
-  // Filtering
-  if (status) tasks = tasks.filter(t => t.status === status.toLowerCase());
-  if (dueDate) tasks = tasks.filter(t => t.dueDate === dueDate);
-  if (priority) tasks = tasks.filter(t => t.priority === priority.toLowerCase());
+  if (filters.status) tasks = tasks.filter(t => t.status === filters.status);
+  if (filters.due) tasks = tasks.filter(t => t.dueDate === filters.due);
+  if (filters.priority) tasks = tasks.filter(t => t.priority === filters.priority);
 
-  // Sort
-  if (sortBy) {
-    if (sortBy === 'due') {
-      tasks.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-    } else if (sortBy === 'due-desc') {
-      tasks.sort((a, b) => new Date(b.dueDate) - new Date(a.dueDate));
-    } else if (sortBy === 'created') {
-      tasks.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    }
+  if (filters.sort === 'due') {
+    tasks.sort((a, b) => new Date(a.dueDate || '') - new Date(b.dueDate || ''));
+  } else if (filters.sort === 'created') {
+    tasks.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
   }
 
-  console.log('\n\x1b[1m\x1b[36mTask List\x1b[0m');
-  console.log('='.repeat(60));
+  if (tasks.length === 0) return console.log(`${colors.yellow}No tasks found.${colors.reset}`);
 
-  tasks.forEach(task => {
-    const priorityColor =
-      task.priority === 'high' ? '\x1b[31m' :
-        task.priority === 'medium' ? '\x1b[33m' : '\x1b[32m';
-
-    const statusIcon = task.status === 'done' ? '✔' : '•';
-    const line = `${statusIcon} [${task.id}] ${task.title} (due: ${task.dueDate}, priority: ${task.priority})`;
-
-    console.log(priorityColor + line + '\x1b[0m');
-  });
-
-  console.log('');
+  for (const task of tasks) {
+    const color = task.status === 'done'
+      ? colors.green
+      : (task.dueDate && new Date(task.dueDate) < new Date())
+        ? colors.red
+        : colors.yellow;
+    console.log(`${color}[${task.id}] ${task.title}${colors.reset}`);
+    console.log(`  Status: ${task.status} | Due: ${task.dueDate || '-'} | Priority: ${task.priority}`);
+  }
 }
 
-/**
- * Mark a task as done by its ID
- * @param {number|string} id - The task ID to mark as done
- */
-function markTaskAsDone(id) {
+function markDone(id) {
   const tasks = loadTasks();
-  const taskIndex = tasks.findIndex(task => String(task.id) === String(id));
-
-  if (taskIndex === -1) {
-    console.log(`Task with ID ${id} not found.`);
-    return;
-  }
-
-  if (tasks[taskIndex].status === 'done') {
-    console.log(`Task with ID ${id} is already marked as done.`);
-    return;
-  }
-
-  tasks[taskIndex].status = 'done';
+  const task = tasks.find(t => t.id === id);
+  if (!task) return console.log(`${colors.red}Task with ID ${id} not found.${colors.reset}`);
+  task.status = 'done';
   saveTasks(tasks);
-
-  console.log(`Task "${tasks[taskIndex].title}" marked as done.`);
+  console.log(`${colors.green}Task ${id} marked as done.${colors.reset}`);
 }
 
-/**
- * Delete a task by its ID
- * @param {number|string} id - The ID of the task to delete
- */
 function deleteTask(id) {
-  const tasks = loadTasks();
-  const taskIndex = tasks.findIndex(task => String(task.id) === String(id));
-
-  if (taskIndex === -1) {
-    console.log(`Task with ID ${id} not found.`);
-    return;
+  let tasks = loadTasks();
+  const before = tasks.length;
+  tasks = tasks.filter(t => t.id !== id);
+  if (tasks.length === before) {
+    return console.log(`${colors.red}Task with ID ${id} not found.${colors.reset}`);
   }
-
-  const removed = tasks.splice(taskIndex, 1)[0];
   saveTasks(tasks);
-
-  console.log(`Task "${removed.title}" deleted.`);
+  console.log(`${colors.green}Task ${id} deleted.${colors.reset}`);
 }
 
-/**
- * Update a task by ID. Accepts optional new title and/or dueDate.
- * @param {string|number} id - ID of the task to update
- * @param {object} updates - Object with optional `title` and/or `dueDate`
- */
-function updateTask(id, updates = {}) {
+function updateTask(id, updates) {
   const tasks = loadTasks();
-  const index = tasks.findIndex(task => String(task.id) === String(id));
+  const task = tasks.find(t => t.id === id);
+  if (!task) return console.log(`${colors.red}Task with ID ${id} not found.${colors.reset}`);
 
-  if (index === -1) {
-    console.log(`Task with ID ${id} not found.`);
-    return;
+  if (updates.title) task.title = updates.title;
+  if (updates.due) {
+    if (!isValidDate(updates.due)) return console.log(`${colors.red}Invalid due date.${colors.reset}`);
+    task.dueDate = updates.due;
   }
-
-  const task = tasks[index];
-
-  if (updates.title) {
-    task.title = updates.title;
-  }
-  if (updates.dueDate) {
-    task.dueDate = updates.dueDate;
-  }
+  if (updates.priority) task.priority = updates.priority;
 
   saveTasks(tasks);
-  console.log(`Task "${task.title}" updated.`);
+  console.log(`${colors.green}Task ${id} updated.${colors.reset}`);
 }
 
-function archiveTasks() {
-  const tasks = loadTasks();
-  const doneTasks = tasks.filter(t => t.status === 'done');
-  const remainingTasks = tasks.filter(t => t.status !== 'done');
+function showHelp() {
+  console.log(`
+${colors.bold}To-Do CLI - Usage Guide${colors.reset}
 
-  if (doneTasks.length === 0) {
-    console.log('\x1b[33mNo completed tasks to archive.\x1b[0m');
-    return;
-  }
+${colors.cyan}Commands:${colors.reset}
 
-  let archive = [];
-  if (fs.existsSync(ARCHIVE_FILE)) {
-    const archiveData = fs.readFileSync(ARCHIVE_FILE, 'utf8');
-    archive = archiveData ? JSON.parse(archiveData) : [];
-  }
-
-  archive.push(...doneTasks);
-
-  fs.writeFileSync(ARCHIVE_FILE, JSON.stringify(archive, null, 2));
-  saveTasks(remainingTasks);
-
-  console.log(`\x1b[32mArchived ${doneTasks.length} completed task(s).\x1b[0m`);
-}
-
-function cleanupTasks() {
-  const tasks = loadTasks();
-  const remaining = tasks.filter(t => t.status !== 'done');
-  const removedCount = tasks.length - remaining.length;
-
-  if (removedCount === 0) {
-    console.log('\x1b[33mNo completed tasks to remove.\x1b[0m');
-    return;
-  }
-
-  saveTasks(remaining);
-  console.log(`\x1b[32mDeleted ${removedCount} completed task(s).\x1b[0m`);
+  ${colors.yellow}add${colors.reset}       --title "Task" [--desc ""] [--due "YYYY-MM-DD"] [--priority low|medium|high]
+  ${colors.yellow}list${colors.reset}      [--status pending|done] [--due "YYYY-MM-DD"] [--priority ...] [--sort due|created]
+  ${colors.yellow}done${colors.reset}      --id 3
+  ${colors.yellow}update${colors.reset}    --id 2 [--title ""] [--due "YYYY-MM-DD"] [--priority ...]
+  ${colors.yellow}delete${colors.reset}    --id 4
+  ${colors.yellow}remind${colors.reset}    Show tasks due in next 24h
+  ${colors.yellow}archive${colors.reset}   Move done tasks to archive.json
+  ${colors.yellow}export${colors.reset}    [--format txt|csv]
+  ${colors.yellow}import${colors.reset}    --file path.csv
+  ${colors.yellow}help${colors.reset}      Show this help message
+  ${colors.yellow}--version${colors.reset} Show version from package.json
+`);
 }
 
 function remindTasks() {
   const tasks = loadTasks();
   const now = new Date();
-  const oneDayLater = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  const soon = new Date(now.getTime() + 24 * 60 * 60 * 1000);
 
-  const upcomingTasks = tasks.filter(task => {
-    if (task.status !== 'pending') return false;
-    const due = new Date(task.dueDate);
-    return due >= now && due <= oneDayLater;
-  });
+  const upcoming = tasks.filter(t => t.status === 'pending' && t.dueDate && new Date(t.dueDate) <= soon);
 
-  if (upcomingTasks.length === 0) {
-    console.log('\x1b[36mNo tasks due within 24 hours.\x1b[0m');
-    return;
+  if (upcoming.length === 0) {
+    return console.log(`${colors.green}No tasks due in the next 24 hours.${colors.reset}`);
   }
 
-  console.log('\x1b[1m\x1b[33m⏰ Upcoming Tasks (due within 24 hours):\x1b[0m');
-  upcomingTasks.forEach(task => {
-    console.log(`\x1b[33m[${task.id}] ${task.title} → Due: ${task.dueDate}\x1b[0m`);
-  });
+  console.log(`${colors.yellow}Tasks due soon:${colors.reset}`);
+  for (const task of upcoming) {
+    console.log(`[${task.id}] ${task.title} - Due: ${task.dueDate}`);
+  }
 }
 
-const EXPORTS_DIR = path.join(__dirname, 'exports');
-if (!fs.existsSync(EXPORTS_DIR)) fs.mkdirSync(EXPORTS_DIR);
+function archiveTasks() {
+  const tasks = loadTasks();
+  const doneTasks = tasks.filter(t => t.status === 'done');
+  const remaining = tasks.filter(t => t.status !== 'done');
+
+  if (doneTasks.length === 0) {
+    return console.log(`${colors.yellow}No completed tasks to archive.${colors.reset}`);
+  }
+
+  const archived = loadTasks(ARCHIVE_FILE);
+  const combined = [...archived, ...doneTasks];
+
+  saveTasks(combined, ARCHIVE_FILE);
+  saveTasks(remaining);
+
+  console.log(`${colors.green}${doneTasks.length} task(s) archived.${colors.reset}`);
+}
 
 function exportTasks(format = 'txt') {
   const tasks = loadTasks();
-  const filename = `tasks_export_${Date.now()}.${format}`;
-  const filePath = path.join(EXPORTS_DIR, filename);
-
-  let content = '';
-
   if (format === 'csv') {
-    content = 'id,title,description,dueDate,status,priority,createdAt\n';
-    content += tasks.map(t =>
-      `${t.id},"${t.title.replace(/"/g, '""')}","${t.description.replace(/"/g, '""')}",${t.dueDate},${t.status},${t.priority},${t.createdAt}`
-    ).join('\n');
+    const header = 'id,title,description,dueDate,priority,status,createdAt';
+    const rows = tasks.map(t =>
+      [t.id, t.title, t.description, t.dueDate, t.priority, t.status, t.createdAt].map(v => `"${(v || '').replace(/"/g, '""')}"`).join(',')
+    );
+    fs.writeFileSync('tasks.csv', [header, ...rows].join('\n'));
+    console.log(`${colors.green}Exported to tasks.csv${colors.reset}`);
   } else {
-    content = tasks.map(t =>
-      `ID: ${t.id}\nTitle: ${t.title}\nDescription: ${t.description}\nDue: ${t.dueDate}\nStatus: ${t.status}\nPriority: ${t.priority}\nCreated At: ${t.createdAt}\n---`
+    const content = tasks.map(t =>
+      `ID: ${t.id}\nTitle: ${t.title}\nDesc: ${t.description}\nDue: ${t.dueDate || '-'}\nPriority: ${t.priority}\nStatus: ${t.status}\n---`
     ).join('\n\n');
+    fs.writeFileSync('tasks.txt', content);
+    console.log(`${colors.green}Exported to tasks.txt${colors.reset}`);
   }
-
-  fs.writeFileSync(filePath, content);
-  console.log(`\x1b[32mTasks exported to ${filePath}\x1b[0m`);
 }
 
 function importTasks(filePath) {
   if (!fs.existsSync(filePath)) {
-    console.log('\x1b[31mFile not found:\x1b[0m', filePath);
-    return;
+    return console.log(`${colors.red}File not found: ${filePath}${colors.reset}`);
   }
 
-  const ext = path.extname(filePath).toLowerCase();
-  const fileContent = fs.readFileSync(filePath, 'utf8');
-  const existingTasks = loadTasks();
-  let newTasks = [];
+  const ext = path.extname(filePath);
+  const content = fs.readFileSync(filePath, 'utf8');
+  const existing = loadTasks();
+
+  let imported = [];
 
   if (ext === '.csv') {
-    const lines = fileContent.trim().split('\n').slice(1); // skip header
-    newTasks = lines.map(line => {
-      const [id, title, description, dueDate, status, priority, createdAt] = line.split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(val => val.replace(/^"|"$/g, ''));
-      return {
-        id: Number(id),
-        title,
-        description,
-        dueDate,
-        status,
-        priority,
-        createdAt
-      };
-    });
+    const lines = content.split('\n').slice(1);
+    for (const line of lines) {
+      const [id, title, description, dueDate, priority, status, createdAt] = line.split(',').map(s => s.replace(/^"|"$/g, ''));
+      imported.push({
+        id: getNextId(existing.concat(imported)),
+        title, description, dueDate, priority, status, createdAt
+      });
+    }
   } else {
-    console.log('\x1b[33mImport from .txt not supported yet. Use .csv format.\x1b[0m');
-    return;
+    return console.log(`${colors.red}Unsupported file format.${colors.reset}`);
   }
 
-  // Prevent duplicate IDs
-  const maxId = existingTasks.reduce((max, t) => Math.max(max, t.id), 0);
-  newTasks.forEach((t, index) => {
-    t.id = maxId + index + 1;
-  });
-
-  saveTasks([...existingTasks, ...newTasks]);
-  console.log(`\x1b[32mImported ${newTasks.length} tasks from ${filePath}\x1b[0m`);
+  saveTasks([...existing, ...imported]);
+  console.log(`${colors.green}Imported ${imported.length} tasks from ${filePath}${colors.reset}`);
 }
 
-function showHelp() {
-  console.log(`
-\x1b[1mTo-Do CLI - Usage Guide\x1b[0m
-
-\x1b[36mCommands:\x1b[0m
-
-  \x1b[33madd\x1b[0m         Add a new task
-    --title "Task Title"         (required)
-    --desc "Task description"    (optional)
-    --due "YYYY-MM-DD"           (optional)
-    --priority low|medium|high   (optional)
-
-  \x1b[33mlist\x1b[0m        Show all tasks
-    --status pending|done        (optional)
-    --due "YYYY-MM-DD"           (optional)
-    --priority low|medium|high   (optional)
-    --sort due|created           (optional)
-
-  \x1b[33mdone\x1b[0m        Mark task as done
-    --id <task_id>
-
-  \x1b[33mupdate\x1b[0m      Update task info
-    --id <task_id>
-    --title "New title"          (optional)
-    --due "YYYY-MM-DD"           (optional)
-    --priority low|medium|high   (optional)
-
-  \x1b[33mdelete\x1b[0m      Delete a task by ID
-    --id <task_id>
-
-  \x1b[33mremind\x1b[0m      Show tasks due within 24 hours
-
-  \x1b[33mexport\x1b[0m      Export tasks
-    --format txt|csv             (optional, default: txt)
-
-  \x1b[33mimport\x1b[0m      Import tasks from file
-    --file <path/to/file.csv>
-
-  \x1b[33marchive\x1b[0m     Move completed tasks to archive.json
-
-  \x1b[33mcleanup\x1b[0m     Alias for archive
-
-  \x1b[33mhelp\x1b[0m        Show this help message
-
-\x1b[36mExamples:\x1b[0m
-
-  node index.js add --title "Buy milk" --due "2025-05-20"
-  node index.js list --status pending --sort due
-  node index.js done --id 2
-  node index.js update --id 3 --title "Submit project" --priority high
-  node index.js delete --id 5
-  node index.js export --format csv
-  node index.js import --file ./exports/tasks.csv
-  node index.js remind
-  node index.js help
-`);
-}
-
-
+// === Exports ===
 module.exports = {
   addTask,
   listTasks,
-  markTaskAsDone,
+  markDone,
   deleteTask,
   updateTask,
-  archiveTasks,
-  cleanupTasks,
+  showHelp,
   remindTasks,
+  archiveTasks,
   exportTasks,
-  importTasks,
-  showHelp
+  importTasks
 };

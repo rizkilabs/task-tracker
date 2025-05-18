@@ -1,152 +1,97 @@
+#!/usr/bin/env node
+
 const {
   addTask,
   listTasks,
-  markTaskAsDone,
+  markDone,
   deleteTask,
   updateTask,
-  archiveTasks,
-  cleanupTasks,
+  showHelp,
   remindTasks,
+  archiveTasks,
   exportTasks,
-  importTasks,
-  showHelp
+  importTasks
 } = require('./todo');
-
-const [, , command, ...args] = process.argv;
-const options = parseArgs(args);
-const confirm = require('readline').createInterface({ input: process.stdin, output: process.stdout });
-const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-exec('node index.js list', (err, stdout, stderr) => {
-  if (stdout.includes('Pending Tasks')) console.log('PASS');
-});
+// === Helper: Parse CLI arguments ===
+function parseArgs(argv) {
+  const args = {};
+  let key = null;
 
-if (process.argv.includes('--version')) {
-  const pkg = require('./package.json');
-  console.log(`To-Do CLI - version ${pkg.version}`);
-  process.exit(0); // Exit after printing version
+  for (let i = 2; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg.startsWith('--')) {
+      key = arg.slice(2);
+      args[key] = true; // default value for flags
+    } else if (key) {
+      args[key] = arg;
+      key = null;
+    }
+  }
+
+  return args;
 }
 
-// if (command === 'version') {
-//   const pkg = require('./package.json');
-//   console.log(`To-Do CLI - version ${pkg.version}`);
-//   return;
-// }
+// === Main ===
+const args = parseArgs(process.argv);
+const command = process.argv[2];
 
 switch (command) {
   case 'add':
-    if (!options.title || !options.due) {
-      console.log('\x1b[31mMissing --title or --due\x1b[0m');
-      break;
-    }
-    addTask(options.title, options.due, options.priority || 'medium');
+    addTask(args);
     break;
-
-
   case 'list':
-    listTasks({
-      status: options.status,
-      dueDate: options.due,
-      sortBy: options.sort,
-      priority: options.priority
-    });
+    listTasks(args);
     break;
-
-
   case 'done':
-    if (!options.id || isNaN(Number(options.id))) {
-      console.log('Error: --id is required and must be a valid number.');
-      return;
+    if (!args.id) {
+      console.log('Usage: done --id <taskId>');
+    } else {
+      markDone(Number(args.id));
     }
-    markTaskAsDone(options.id);
     break;
-
   case 'delete':
-    if (!options.id || isNaN(Number(options.id))) {
-      console.log('Error: --id is required and must be a valid number.');
-      return;
+    if (!args.id) {
+      console.log('Usage: delete --id <taskId>');
+    } else {
+      deleteTask(Number(args.id));
     }
-    confirm.question('Are you sure? (y/n): ', answer => {
-      if (answer.toLowerCase() === 'y') deleteTask(options.id);
-      confirm.close();
-    });
-
     break;
-
   case 'update':
-    if (!options.id || isNaN(Number(options.id))) {
-      console.log('Error: --id is required and must be a valid number.');
-      return;
+    if (!args.id) {
+      console.log('Usage: update --id <taskId> [--title ""] [--due "YYYY-MM-DD"] [--priority ""]');
+    } else {
+      updateTask(Number(args.id), args);
     }
-    updateTask(options.id, { title: options.title, dueDate: options.due });
     break;
-
-  case 'archive':
-  case 'cleanup':
-    archiveTasks();
-    break;
-
   case 'remind':
     remindTasks();
     break;
-
-  case 'export':
-    exportTasks(options.format || 'txt');
+  case 'archive':
+    archiveTasks();
     break;
-
+  case 'export':
+    exportTasks(args.format);
+    break;
   case 'import':
-    if (!options.file) {
-      console.log('\x1b[31mPlease provide a file path with --file\x1b[0m');
+    if (!args.file) {
+      console.log('Usage: import --file <path>');
     } else {
-      importTasks(options.file);
+      importTasks(args.file);
     }
     break;
-
   case 'help':
     showHelp();
     break;
-
-
+  case '--version':
+  case 'version':
+    const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json')));
+    console.log(`v${pkg.version}`);
+    break;
   default:
-    printHelp();
+    console.log(`Unknown command: ${command}`);
+    showHelp();
     break;
 }
-
-// Helper to parse CLI args into an object
-function parseArgs(args) {
-  const result = {};
-  for (let i = 0; i < args.length; i++) {
-    if (args[i].startsWith('--')) {
-      const key = args[i].substring(2);
-      result[key] = args[i + 1];
-      i++;
-    }
-  }
-  return result;
-}
-
-function isValidDate(dateStr) {
-  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-  if (!dateRegex.test(dateStr)) return false;
-  const date = new Date(dateStr);
-  return !isNaN(date.getTime());
-}
-
-function showError(message) {
-  console.error(`\x1b[31mError:\x1b[0m ${message}`);
-  process.exit(1);
-}
-
-// Help message
-function printHelp() {
-  console.log('\nUsage:');
-  console.log('  node index.js add --title "Task" --due "YYYY-MM-DD"');
-  console.log('  node index.js list');
-  console.log('  node index.js done --id <taskId>');
-  console.log('  node index.js delete --id <taskId>');
-  console.log('  node index.js update --id <taskId> [--title "New title"] [--due "YYYY-MM-DD"]\n');
-}
-
-
